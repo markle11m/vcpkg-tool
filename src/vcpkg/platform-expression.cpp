@@ -153,10 +153,41 @@ namespace vcpkg::PlatformExpression
                         // { "|", optional-whitespace, platform-expression-not }
                         return expr_binary<'|', '&'>(std::make_unique<ExprImpl>(ExprKind::op_or, std::move(result)));
                     }
+                    case ',':
+                    {
+                        // { ",", optional-whitespace, platform-expression-not }
+                        // "," is a near-synonym of "|", with the differences that it can be combined with "&", but has lower precedence
+                        // TODO: this is in a separate case-stmt while we determine how to handle precedence
+                        return expr_binary<'|', '&'>(std::make_unique<ExprImpl>(ExprKind::op_or, std::move(result)));
+                    }
                     case '&':
                     {
                         // { "&", optional-whitespace, platform-expression-not }
                         return expr_binary<'&', '|'>(std::make_unique<ExprImpl>(ExprKind::op_and, std::move(result)));
+                    }
+                    case 'a':
+                    {
+                        // { "and", optional-whitespace, platform-expression-not }
+                        // "and" is a synonym of "&"
+                        std::string name = match_zero_or_more(is_identifier_char).to_string();
+                        if (name == "and")
+                        {
+                            return expr_binary<'&', '|'>(
+                                std::make_unique<ExprImpl>(ExprKind::op_and, std::move(result)));
+                        }
+                        else
+                        {
+                            // TODO: This is copied from expr_identifier(). Need to evaluate and/or refactor if appropriate.
+                            if (name.empty())
+                            {
+                                add_error("unexpected character in logic expression");
+                            }
+
+                            // optional-whitespace
+                            skip_whitespace();
+
+                            return std::make_unique<ExprImpl>(ExprKind::identifier, std::move(name));
+                        }
                     }
                     default: return result;
                 }

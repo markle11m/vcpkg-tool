@@ -152,9 +152,35 @@ TEST_CASE ("platform-expression-and", "[platform-expression]")
     }));
 }
 
+TEST_CASE ("platform-expression-and-alternate", "[platform-expression]")
+{
+    auto m_expr = parse_expr("!windows and !arm");
+    REQUIRE(m_expr);
+    auto& expr = *m_expr.get();
+
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+    CHECK_FALSE(expr.evaluate({
+        {"VCPKG_CMAKE_SYSTEM_NAME", "Linux"},
+        {"VCPKG_TARGET_ARCHITECTURE", "arm"},
+    }));
+}
+
 TEST_CASE ("platform-expression-or", "[platform-expression]")
 {
     auto m_expr = parse_expr("!windows | arm");
+    REQUIRE(m_expr);
+    auto& expr = *m_expr.get();
+
+    CHECK_FALSE(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
+    CHECK(expr.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+}
+
+TEST_CASE ("platform-expression-or-alternate", "[platform-expression]")
+{
+    auto m_expr = parse_expr("!windows , arm");
     REQUIRE(m_expr);
     auto& expr = *m_expr.get();
 
