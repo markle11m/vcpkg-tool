@@ -207,3 +207,37 @@ TEST_CASE ("no mixing &, | in platform expressions", "[platform-expression]")
     m_expr = parse_expr("windows | !arm & linux");
     CHECK_FALSE(m_expr);
 }
+
+TEST_CASE ("invalid expression, no binary operator", "[platform-expression]")
+{
+    auto m_expr = parse_expr("windows linux");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("windows x64");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("!windows x86");
+    CHECK_FALSE(m_expr);
+}
+
+TEST_CASE ("invalid expression, missing binary operand", "[platform-expression]")
+{
+    auto m_expr = parse_expr("windows & ");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr(" | arm");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("windows & !arm & ");
+    CHECK_FALSE(m_expr);
+}
+
+TEST_CASE ("invalid identifier", "[platform-expression]")
+{
+    auto m_expr = parse_expr("windows & x^$");
+    CHECK_FALSE(m_expr);
+}
+
+TEST_CASE ("invalid platform-express-alternate-and expressions", "[platform-expression]")
+{
+    auto m_expr = parse_expr("windows an%d arm");
+    CHECK_FALSE(m_expr);
+    m_expr = parse_expr("windows aNd arm");
+    CHECK_FALSE(m_expr);
+}
