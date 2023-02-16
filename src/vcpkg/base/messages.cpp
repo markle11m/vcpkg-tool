@@ -13,6 +13,90 @@ CMRC_DECLARE(cmakerc);
 
 using namespace vcpkg;
 
+namespace vcpkg
+{
+    LocalizedString::operator StringView() const noexcept { return m_data; }
+    const std::string& LocalizedString::data() const noexcept { return m_data; }
+    const std::string& LocalizedString::to_string() const noexcept { return m_data; }
+    std::string LocalizedString::extract_data() { return std::exchange(m_data, std::string{}); }
+
+    LocalizedString LocalizedString::from_raw(std::string&& s) noexcept { return LocalizedString(std::move(s)); }
+
+    LocalizedString& LocalizedString::append_raw(char c)
+    {
+        m_data.push_back(c);
+        return *this;
+    }
+
+    LocalizedString& LocalizedString::append_raw(StringView s)
+    {
+        m_data.append(s.begin(), s.size());
+        return *this;
+    }
+
+    LocalizedString& LocalizedString::append(const LocalizedString& s)
+    {
+        m_data.append(s.m_data);
+        return *this;
+    }
+
+    LocalizedString& LocalizedString::append_indent(size_t indent)
+    {
+        m_data.append(indent * 4, ' ');
+        return *this;
+    }
+
+    LocalizedString& LocalizedString::append_floating_list(int indent, View<LocalizedString> items)
+    {
+        switch (items.size())
+        {
+            case 0: break;
+            case 1: append_raw(' ').append(items[0]); break;
+            default:
+                for (auto&& item : items)
+                {
+                    append_raw('\n').append_indent(indent).append(item);
+                }
+
+                break;
+        }
+
+        return *this;
+    }
+
+    const char* to_printf_arg(const LocalizedString& s) noexcept { return s.data().c_str(); }
+
+    bool operator==(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
+    {
+        return lhs.data() == rhs.data();
+    }
+
+    bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
+    {
+        return lhs.data() != rhs.data();
+    }
+
+    bool operator<(const LocalizedString& lhs, const LocalizedString& rhs) noexcept { return lhs.data() < rhs.data(); }
+
+    bool operator<=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
+    {
+        return lhs.data() <= rhs.data();
+    }
+
+    bool operator>(const LocalizedString& lhs, const LocalizedString& rhs) noexcept { return lhs.data() > rhs.data(); }
+
+    bool operator>=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
+    {
+        return lhs.data() >= rhs.data();
+    }
+
+    bool LocalizedString::empty() const noexcept { return m_data.empty(); }
+    void LocalizedString::clear() noexcept { m_data.clear(); }
+
+    LocalizedString::LocalizedString(StringView data) : m_data(data.data(), data.size()) { }
+    LocalizedString::LocalizedString(std::string&& data) noexcept : m_data(std::move(data)) { }
+}
+
 namespace vcpkg::msg
 {
     REGISTER_MESSAGE(SeeURL);
@@ -413,10 +497,20 @@ namespace vcpkg
     MessageSink& stderr_sink = stderr_sink_instance;
     MessageSink& stdout_sink = stdout_sink_instance;
 
+    REGISTER_MESSAGE(ABaseline);
+    REGISTER_MESSAGE(ABoolean);
+    REGISTER_MESSAGE(ABaselineObject);
+    REGISTER_MESSAGE(ABuiltinRegistry);
+    REGISTER_MESSAGE(AConfigurationObject);
+    REGISTER_MESSAGE(ADependency);
+    REGISTER_MESSAGE(ADemandObject);
+    REGISTER_MESSAGE(AString);
+    REGISTER_MESSAGE(ADateVersionString);
     REGISTER_MESSAGE(AddArtifactOnlyOne);
     REGISTER_MESSAGE(AddCommandFirstArg);
     REGISTER_MESSAGE(AddFirstArgument);
     REGISTER_MESSAGE(AddingCompletionEntry);
+    REGISTER_MESSAGE(APlatformExpression);
     REGISTER_MESSAGE(AdditionalPackagesToExport);
     REGISTER_MESSAGE(AdditionalPackagesToRemove);
     REGISTER_MESSAGE(AddPortRequiresManifest);
@@ -449,25 +543,69 @@ namespace vcpkg
     REGISTER_MESSAGE(AddVersionUseOptionAll);
     REGISTER_MESSAGE(AddVersionVersionAlreadyInFile);
     REGISTER_MESSAGE(AddVersionVersionIs);
+    REGISTER_MESSAGE(ADictionaryOfContacts);
+    REGISTER_MESSAGE(AFeature);
+    REGISTER_MESSAGE(AFilesystemRegistry);
+    REGISTER_MESSAGE(AGitObjectSha);
+    REGISTER_MESSAGE(AGitReference);
+    REGISTER_MESSAGE(AGitRegistry);
+    REGISTER_MESSAGE(AGitRepositoryUrl);
     REGISTER_MESSAGE(AllFormatArgsRawArgument);
     REGISTER_MESSAGE(AllFormatArgsUnbalancedBraces);
     REGISTER_MESSAGE(AllPackagesAreUpdated);
     REGISTER_MESSAGE(AlreadyInstalled);
     REGISTER_MESSAGE(AlreadyInstalledNotHead);
+    REGISTER_MESSAGE(AnArtifactsGitRegistryUrl);
+    REGISTER_MESSAGE(AnArtifactsRegistry);
+    REGISTER_MESSAGE(AnArrayOfDependencies);
+    REGISTER_MESSAGE(AnArrayOfDependencyOverrides);
+    REGISTER_MESSAGE(AnArrayOfIdentifers);
+    REGISTER_MESSAGE(AnArrayOfOverlayPaths);
+    REGISTER_MESSAGE(AnArrayOfOverlayTripletsPaths);
+    REGISTER_MESSAGE(AnArrayOfRegistries);
+    REGISTER_MESSAGE(AnArrayOfVersions);
+    REGISTER_MESSAGE(AndroidHomeDirMissingProps);
+    REGISTER_MESSAGE(AnExactVersionString);
+    REGISTER_MESSAGE(AnIdentifer);
+    REGISTER_MESSAGE(AnObjectContainingVcpkgArtifactsMetadata);
+    REGISTER_MESSAGE(AnOverlayPath);
+    REGISTER_MESSAGE(AnOverlayTripletsPath);
+    REGISTER_MESSAGE(AnOverride);
+    REGISTER_MESSAGE(ANonNegativeInteger);
     REGISTER_MESSAGE(AnotherInstallationInProgress);
+    REGISTER_MESSAGE(AnSpdxLicenseExpression);
+    REGISTER_MESSAGE(APackageName);
+    REGISTER_MESSAGE(APackagePattern);
+    REGISTER_MESSAGE(APackagePatternArray);
+    REGISTER_MESSAGE(APath);
     REGISTER_MESSAGE(AppliedUserIntegration);
+    REGISTER_MESSAGE(ApplocalProcessing);
+    REGISTER_MESSAGE(ARegistry);
+    REGISTER_MESSAGE(ARegistryImplementationKind);
+    REGISTER_MESSAGE(ARegistryPath);
+    REGISTER_MESSAGE(ARelaxedVersionString);
     REGISTER_MESSAGE(ArtifactsOptionIncompatibility);
+    REGISTER_MESSAGE(ASemanticVersionString);
+    REGISTER_MESSAGE(ASetOfFeatures);
+    REGISTER_MESSAGE(AStringOrArrayOfStrings);
+    REGISTER_MESSAGE(AStringStringDictionary);
     REGISTER_MESSAGE(AssetSourcesArg);
     REGISTER_MESSAGE(AttemptingToFetchPackagesFromVendor);
     REGISTER_MESSAGE(AttemptingToSetBuiltInBaseline);
     REGISTER_MESSAGE(AuthenticationMayRequireManualAction);
     REGISTER_MESSAGE(AutomaticLinkingForMSBuildProjects);
     REGISTER_MESSAGE(AutoSettingEnvVar);
+    REGISTER_MESSAGE(AUrl);
+    REGISTER_MESSAGE(AVersionDatabaseEntry);
+    REGISTER_MESSAGE(AVersionObject);
+    REGISTER_MESSAGE(AVersionOfAnyType);
+    REGISTER_MESSAGE(AVersionConstraint);
     REGISTER_MESSAGE(BaselineConflict);
     REGISTER_MESSAGE(BaselineFileNoDefaultField);
     REGISTER_MESSAGE(BaselineMissingDefault);
     REGISTER_MESSAGE(AvailableArchitectureTriplets);
     REGISTER_MESSAGE(AvailableHelpTopics);
+    REGISTER_MESSAGE(AVcpkgRepositoryCommit);
     REGISTER_MESSAGE(BinarySourcesArg);
     REGISTER_MESSAGE(BuildAlreadyInstalled);
     REGISTER_MESSAGE(BuildDependenciesMissing);
@@ -542,7 +680,7 @@ namespace vcpkg
     REGISTER_MESSAGE(DateTableHeader);
     REGISTER_MESSAGE(DefaultBrowserLaunched);
     REGISTER_MESSAGE(DefaultFlag);
-    REGISTER_MESSAGE(DefaultPathToBinaries);
+    REGISTER_MESSAGE(DefaultTriplet);
     REGISTER_MESSAGE(DeleteVcpkgConfigFromManifest);
     REGISTER_MESSAGE(DeprecatedPrefabDebugOption);
     REGISTER_MESSAGE(DetectCompilerHash);
@@ -579,6 +717,7 @@ namespace vcpkg
     REGISTER_MESSAGE(EndOfStringInCodeUnit);
     REGISTER_MESSAGE(EnvInvalidMaxConcurrency);
     REGISTER_MESSAGE(EnvStrFailedToExtract);
+    REGISTER_MESSAGE(EnvPlatformNotSupported);
     REGISTER_MESSAGE(ErrorDetectingCompilerInfo);
     REGISTER_MESSAGE(ErrorIndividualPackagesUnsupported);
     REGISTER_MESSAGE(ErrorInvalidClassicModeOption);
@@ -603,6 +742,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ExceededRecursionDepth);
     REGISTER_MESSAGE(ExcludedPackage);
     REGISTER_MESSAGE(ExcludedPackages);
+    REGISTER_MESSAGE(ExpectedAnObject);
     REGISTER_MESSAGE(ExpectedAtMostOneSetOfTags);
     REGISTER_MESSAGE(ExpectedCascadeFailure);
     REGISTER_MESSAGE(ExpectedCharacterHere);
@@ -659,13 +799,16 @@ namespace vcpkg
     REGISTER_MESSAGE(FeedbackAppreciated);
     REGISTER_MESSAGE(FetchingBaselineInfo);
     REGISTER_MESSAGE(FetchingRegistryInfo);
-    REGISTER_MESSAGE(FishCompletion);
     REGISTER_MESSAGE(FloatingPointConstTooBig);
     REGISTER_MESSAGE(FileNotFound);
     REGISTER_MESSAGE(FileReadFailed);
     REGISTER_MESSAGE(FileSeekFailed);
     REGISTER_MESSAGE(FilesExported);
     REGISTER_MESSAGE(FileSystemOperationFailed);
+    REGISTER_MESSAGE(FishCompletion);
+    REGISTER_MESSAGE(FilesContainAbsolutePath1);
+    REGISTER_MESSAGE(FilesContainAbsolutePath2);
+    REGISTER_MESSAGE(FieldKindDidNotHaveExpectedValue);
     REGISTER_MESSAGE(FollowingPackagesMissingControl);
     REGISTER_MESSAGE(FollowingPackagesNotInstalled);
     REGISTER_MESSAGE(FollowingPackagesUpgraded);
@@ -690,7 +833,29 @@ namespace vcpkg
     REGISTER_MESSAGE(GitUnexpectedCommandOutput);
     REGISTER_MESSAGE(HashFileFailureToRead);
     REGISTER_MESSAGE(HeaderOnlyUsage);
+    REGISTER_MESSAGE(HelpAssetCaching);
+    REGISTER_MESSAGE(HelpAssetCachingAzUrl);
+    REGISTER_MESSAGE(HelpAssetCachingBlockOrigin);
+    REGISTER_MESSAGE(HelpAssetCachingScript);
+    REGISTER_MESSAGE(HelpBinaryCaching);
+    REGISTER_MESSAGE(HelpBinaryCachingAws);
+    REGISTER_MESSAGE(HelpBinaryCachingAwsConfig);
+    REGISTER_MESSAGE(HelpBinaryCachingAwsHeader);
+    REGISTER_MESSAGE(HelpBinaryCachingAzBlob);
+    REGISTER_MESSAGE(HelpBinaryCachingCos);
+    REGISTER_MESSAGE(HelpBinaryCachingDefaults);
+    REGISTER_MESSAGE(HelpBinaryCachingDefaultsError);
+    REGISTER_MESSAGE(HelpBinaryCachingFiles);
+    REGISTER_MESSAGE(HelpBinaryCachingGcs);
+    REGISTER_MESSAGE(HelpBinaryCachingHttp);
+    REGISTER_MESSAGE(HelpBinaryCachingNuGet);
+    REGISTER_MESSAGE(HelpBinaryCachingNuGetConfig);
+    REGISTER_MESSAGE(HelpBinaryCachingNuGetHeader);
+    REGISTER_MESSAGE(HelpBinaryCachingNuGetInteractive);
+    REGISTER_MESSAGE(HelpBinaryCachingNuGetFooter);
+    REGISTER_MESSAGE(HelpBinaryCachingNuGetTimeout);
     REGISTER_MESSAGE(HelpBuiltinBase);
+    REGISTER_MESSAGE(HelpCachingClear);
     REGISTER_MESSAGE(HelpContactCommand);
     REGISTER_MESSAGE(HelpCreateCommand);
     REGISTER_MESSAGE(HelpDependInfoCommand);
@@ -732,12 +897,12 @@ namespace vcpkg
     REGISTER_MESSAGE(IllegalPlatformSpec);
     REGISTER_MESSAGE(ImproperShaLength);
     REGISTER_MESSAGE(IncorrectArchiveFileSignature);
-    REGISTER_MESSAGE(IncorrectLibHeaderEnd);
     REGISTER_MESSAGE(IncorrectPESignature);
     REGISTER_MESSAGE(IncorrectNumberOfArgs);
     REGISTER_MESSAGE(IncrementedUtf8Decoder);
     REGISTER_MESSAGE(InfoSetEnvVar);
     REGISTER_MESSAGE(InitRegistryFailedNoRepo);
+    REGISTER_MESSAGE(InstallCopiedFile);
     REGISTER_MESSAGE(InstalledBy);
     REGISTER_MESSAGE(InstalledPackages);
     REGISTER_MESSAGE(InstalledRequestedPackages);
@@ -747,6 +912,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InstallingPackage);
     REGISTER_MESSAGE(InstallPackageInstruction);
     REGISTER_MESSAGE(InstallRootDir);
+    REGISTER_MESSAGE(InstallSkippedUpToDateFile);
     REGISTER_MESSAGE(InstallWithSystemManager);
     REGISTER_MESSAGE(InstallWithSystemManagerMono);
     REGISTER_MESSAGE(InstallWithSystemManagerPkg);
@@ -778,6 +944,7 @@ namespace vcpkg
     REGISTER_MESSAGE(InvalidFloatingPointConst);
     REGISTER_MESSAGE(InvalidHexDigit);
     REGISTER_MESSAGE(InvalidIntegerConst);
+    REGISTER_MESSAGE(InvalidLibraryMissingLinkerMembers);
     REGISTER_MESSAGE(InvalidPortVersonName);
     REGISTER_MESSAGE(InvalidString);
     REGISTER_MESSAGE(InvalidFileType);
@@ -793,6 +960,8 @@ namespace vcpkg
     REGISTER_MESSAGE(JsonValueNotObject);
     REGISTER_MESSAGE(JsonValueNotString);
     REGISTER_MESSAGE(LaunchingProgramFailed);
+    REGISTER_MESSAGE(LibraryArchiveMemberTooSmall);
+    REGISTER_MESSAGE(LibraryFirstLinkerMemberMissing);
     REGISTER_MESSAGE(LicenseExpressionContainsExtraPlus);
     REGISTER_MESSAGE(LicenseExpressionContainsInvalidCharacter);
     REGISTER_MESSAGE(LicenseExpressionContainsUnicode);
@@ -810,6 +979,10 @@ namespace vcpkg
     REGISTER_MESSAGE(LicenseExpressionImbalancedParens);
     REGISTER_MESSAGE(LicenseExpressionUnknownException);
     REGISTER_MESSAGE(LicenseExpressionUnknownLicense);
+    REGISTER_MESSAGE(LinkageDynamicDebug);
+    REGISTER_MESSAGE(LinkageDynamicRelease);
+    REGISTER_MESSAGE(LinkageStaticDebug);
+    REGISTER_MESSAGE(LinkageStaticRelease);
     REGISTER_MESSAGE(ListOfValidFieldsForControlFiles);
     REGISTER_MESSAGE(LoadingCommunityTriplet);
     REGISTER_MESSAGE(LoadingDependencyInformation);
@@ -821,6 +994,7 @@ namespace vcpkg
     REGISTER_MESSAGE(ManifestFormatCompleted);
     REGISTER_MESSAGE(MismatchedFiles);
     REGISTER_MESSAGE(MismatchedNames);
+    REGISTER_MESSAGE(MismatchedType);
     REGISTER_MESSAGE(Missing7zHeader);
     REGISTER_MESSAGE(MissingAndroidEnv);
     REGISTER_MESSAGE(MissingAndroidHomeDir);
@@ -829,6 +1003,7 @@ namespace vcpkg
     REGISTER_MESSAGE(MissingExtension);
     REGISTER_MESSAGE(MissingOption);
     REGISTER_MESSAGE(MissingPortSuggestPullRequest);
+    REGISTER_MESSAGE(MissingRequiredField);
     REGISTER_MESSAGE(MissmatchedBinParagraphs);
     REGISTER_MESSAGE(MonoInstructions);
     REGISTER_MESSAGE(MsiexecFailedToExtract);
@@ -892,7 +1067,6 @@ namespace vcpkg
     REGISTER_MESSAGE(PortsRemoved);
     REGISTER_MESSAGE(PortsUpdated);
     REGISTER_MESSAGE(PortSupportsField);
-    REGISTER_MESSAGE(PortTypeConflict);
     REGISTER_MESSAGE(PreviousIntegrationFileRemains);
     REGISTER_MESSAGE(ProgramReturnedNonzeroExitCode);
     REGISTER_MESSAGE(ProvideExportType);
@@ -957,11 +1131,12 @@ namespace vcpkg
     REGISTER_MESSAGE(UnexpectedEscapeSequence);
     REGISTER_MESSAGE(UnexpectedByteSize);
     REGISTER_MESSAGE(UnexpectedExtension);
+    REGISTER_MESSAGE(UnexpectedField);
+    REGISTER_MESSAGE(UnexpectedFieldSuggest);
     REGISTER_MESSAGE(UnexpectedFormat);
     REGISTER_MESSAGE(UnexpectedToolOutput);
     REGISTER_MESSAGE(UnknownBaselineFileContent);
     REGISTER_MESSAGE(UnknownBinaryProviderType);
-    REGISTER_MESSAGE(UnknownMachineCode);
     REGISTER_MESSAGE(UnknownOptions);
     REGISTER_MESSAGE(UnknownParameterForIntegrate);
     REGISTER_MESSAGE(UnknownPolicySetting);
@@ -972,10 +1147,13 @@ namespace vcpkg
     REGISTER_MESSAGE(UnrecognizedConfigField);
     REGISTER_MESSAGE(UnrecognizedIdentifier);
     REGISTER_MESSAGE(UnsupportedFeature);
+    REGISTER_MESSAGE(UnsupportedFeatureSupportsExpression);
+    REGISTER_MESSAGE(UnsupportedFeatureSupportsExpressionWarning);
     REGISTER_MESSAGE(UnsupportedPort);
     REGISTER_MESSAGE(UnsupportedPortDependency);
-    REGISTER_MESSAGE(UnsupportedPortFeature);
     REGISTER_MESSAGE(UnsupportedShortOptions);
+    REGISTER_MESSAGE(UnsupportedSupportsExpression);
+    REGISTER_MESSAGE(UnsupportedSupportsExpressionWarning);
     REGISTER_MESSAGE(UnsupportedSyntaxInCDATA);
     REGISTER_MESSAGE(UnsupportedSystemName);
     REGISTER_MESSAGE(UnsupportedToolchain);
@@ -1036,9 +1214,9 @@ namespace vcpkg
     REGISTER_MESSAGE(TrailingCommaInObj);
     REGISTER_MESSAGE(Utf8ConversionFailed);
     REGISTER_MESSAGE(PrebuiltPackages);
-    REGISTER_MESSAGE(AndroidHomeDirMissingProps);
     REGISTER_MESSAGE(PortVersionConflict);
     REGISTER_MESSAGE(ToUpdatePackages);
+    REGISTER_MESSAGE(AManifest);
     REGISTER_MESSAGE(AmbiguousConfigDeleteConfigFile);
     REGISTER_MESSAGE(TripletFileNotFound);
     REGISTER_MESSAGE(VcpkgRegistriesCacheIsNotDirectory);
@@ -1055,13 +1233,13 @@ namespace vcpkg
     REGISTER_MESSAGE(PortBugMisplacedCMakeFiles);
     REGISTER_MESSAGE(PortBugDllInLibDir);
     REGISTER_MESSAGE(PortBugMissingLicense);
+    REGISTER_MESSAGE(PortBugMissingProvidedUsage);
     REGISTER_MESSAGE(PortBugFoundCopyrightFiles);
     REGISTER_MESSAGE(PortBugFoundExeInBinDir);
     REGISTER_MESSAGE(PortBugSetDllsWithoutExports);
     REGISTER_MESSAGE(PortBugDllAppContainerBitNotSet);
     REGISTER_MESSAGE(BuiltWithIncorrectArchitecture);
     REGISTER_MESSAGE(BinaryWithInvalidArchitecture);
-    REGISTER_MESSAGE(ExpectedExtension);
     REGISTER_MESSAGE(FailedToDetermineArchitecture);
     REGISTER_MESSAGE(PortBugFoundDllInStaticBuild);
     REGISTER_MESSAGE(PortBugMismatchedNumberOfBinaries);
@@ -1079,6 +1257,7 @@ namespace vcpkg
     REGISTER_MESSAGE(PortBugMovePkgConfigFiles);
     REGISTER_MESSAGE(PortBugRemoveEmptyDirs);
     REGISTER_MESSAGE(PortBugInvalidCrtLinkage);
+    REGISTER_MESSAGE(PortBugInvalidCrtLinkageEntry);
     REGISTER_MESSAGE(PortBugInspectFiles);
     REGISTER_MESSAGE(PortBugOutdatedCRT);
     REGISTER_MESSAGE(PortBugMisplacedFiles);
